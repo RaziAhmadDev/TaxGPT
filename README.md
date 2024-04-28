@@ -1,7 +1,7 @@
-# Project Title
+# Tax GPT
 
 ## Description
-This project is a full-stack application utilizing modern web technologies for efficient data handling and user interactions. It includes a backend service that interfaces with external APIs like Pinecone and OpenAI, and a frontend service built with Next.js.
+This project is a full-stack application utilizing React/Next, Python Flask, Pinecone, and Open AI. This application allows you to upload your W-2 Forms in PDF Format and ask questions about it from an AI in your browser. You can access this application at this url https://taxgpt-service-qonbqlfqya-el.a.run.app
 
 ## Local Development Setup
 
