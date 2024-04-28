@@ -1,3 +1,6 @@
 backendvenv/
 .env
 /backend/deploy.sh
+/webapp/deploy.sh
+settings.json
+.eslintrc.json
