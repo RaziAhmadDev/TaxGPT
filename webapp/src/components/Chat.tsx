@@ -1,13 +1,18 @@
 import React, { useState, FormEvent, ChangeEvent } from "react";
 import { MdSend } from "react-icons/md";
 import axios, { AxiosError } from "axios";
+import Spinner from "./Spinner";
 
 type Message = {
   text: string;
   sender: "user" | "ai";
 };
 
-const ChatComponent: React.FC = () => {
+interface ChatComponentProps {
+  disabled?: boolean;
+}
+
+const ChatComponent: React.FC<ChatComponentProps> = ({ disabled = false }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -73,21 +78,37 @@ const ChatComponent: React.FC = () => {
       <div className="mt-auto p-4 bg-white border-t">
         {error && <div className="text-red-500">{error}</div>}
         <form onSubmit={handleSendMessage} className="flex gap-2">
-          <input
-            type="text"
-            className="flex-grow p-2 border rounded"
-            placeholder="Type your message..."
-            value={newMessage}
-            onChange={handleMessageChange}
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none"
-            disabled={loading}
-          >
-            {loading ? "Sending..." : <MdSend className="w-6 h-6" />}
-          </button>
+          {loading ? (
+            <Spinner message="Generating AI Response..." />
+          ) : (
+            <input
+              type="text"
+              className="flex-grow p-2 border rounded"
+              placeholder={
+                loading
+                  ? "Generating AI Response..."
+                  : disabled
+                    ? "Upload a file to chat with AI"
+                    : "Type a message..."
+              }
+              value={newMessage}
+              onChange={handleMessageChange}
+              disabled={loading || disabled}
+            />
+          )}
+          {!loading && (
+            <button
+              type="submit"
+              className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none"
+              disabled={loading || disabled}
+            >
+              {disabled ? (
+                <MdSend className="w-6 h-6 opacity-50 pointer-events-none " />
+              ) : (
+                <MdSend className="w-6 h-6" />
+              )}
+            </button>
+          )}
         </form>
       </div>
     </div>

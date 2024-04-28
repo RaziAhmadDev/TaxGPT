@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { MdFileUpload } from "react-icons/md";
 import axios, { AxiosError } from "axios";
+import Spinner from "./Spinner";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -9,7 +10,11 @@ type DocumentLoadSuccess = {
   numPages: number;
 };
 
-const FileUpload: React.FC = () => {
+interface FileUploadProps {
+  setEnableChat: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const FileUpload: React.FC<FileUploadProps> = ({ setEnableChat }) => {
   const [file, setFile] = useState<Blob | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -34,6 +39,7 @@ const FileUpload: React.FC = () => {
           },
         );
         setFile(new Blob([uploadedFile], { type: uploadedFile.type }));
+        setEnableChat(true);
       } catch (err: any) {
         const axiosError = err;
         if (axiosError.response) {
@@ -56,7 +62,9 @@ const FileUpload: React.FC = () => {
 
   return (
     <div className="w-1/2 h-screen flex justify-center items-center overflow-auto border-2 border-gray-300 bg-gray-50">
-      {loading && <div className="text-center text-lg">Loading...</div>}
+      {loading && (
+        <Spinner message="Uploading Document, can take up to one minute" />
+      )}
       {error && <div className="text-red-500 text-center text-lg">{error}</div>}
       {!file && !loading && !error && (
         <div className="flex flex-col items-center justify-center cursor-pointer">
