@@ -1,26 +1,30 @@
 import React, { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { MdFileUpload } from "react-icons/md";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
-const FileUpload = () => {
-  const [file, setFile] = useState<any>(null);
-  const [numPages, setNumPages] = useState<any>(null);
-  const [loading, setLoading] = useState<any>(false);
-  const [error, setError] = useState("");
+type DocumentLoadSuccess = {
+  numPages: number;
+};
 
-  async function onFileChange(event: any) {
-    const uploadedFile = event.target.files[0];
-    if (uploadedFile) {
+const FileUpload: React.FC = () => {
+  const [file, setFile] = useState<Blob | null>(null);
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+
+  const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const uploadedFile = event.target.files[0];
       setLoading(true);
       setError("");
       const formData = new FormData();
       formData.append("file", uploadedFile);
 
       try {
-        const response = await axios.post(
+        await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/api/upload`,
           formData,
           {
@@ -29,27 +33,26 @@ const FileUpload = () => {
             },
           },
         );
-
-        setFile(URL.createObjectURL(uploadedFile));
+        setFile(new Blob([uploadedFile], { type: uploadedFile.type }));
       } catch (err: any) {
-        if (err.response) {
+        const axiosError = err;
+        if (axiosError.response) {
           setError(
-            err.response.data.error || "An error occurred during upload.",
+            axiosError?.response?.data?.error ||
+              "An error occurred during upload.",
           );
-        } else if (err.request) {
-          setError("No response was received.");
         } else {
-          setError("Error: " + err.message);
+          setError("Error: " + axiosError.message);
         }
       } finally {
         setLoading(false);
       }
     }
-  }
+  };
 
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+  const onDocumentLoadSuccess = ({ numPages }: DocumentLoadSuccess) => {
     setNumPages(numPages);
-  }
+  };
 
   return (
     <div className="w-1/2 h-screen flex justify-center items-center overflow-auto border-2 border-gray-300 bg-gray-50">
@@ -75,16 +78,16 @@ const FileUpload = () => {
           onLoadSuccess={onDocumentLoadSuccess}
           className="w-full h-auto"
         >
-          {Array.from(new Array(numPages), (el, index) => (
-            <Page
-              key={`page_${index + 1}`}
-              pageNumber={index + 1}
-              width={window.innerWidth / 2}
-              height={window.innerHeight / 2}
-              renderAnnotationLayer={false}
-              renderTextLayer={false}
-            />
-          ))}
+          {numPages &&
+            Array.from(new Array(numPages), (el, index) => (
+              <Page
+                key={`page_${index + 1}`}
+                pageNumber={index + 1}
+                width={window.innerWidth / 2}
+                renderAnnotationLayer={false}
+                renderTextLayer={false}
+              />
+            ))}
         </Document>
       )}
     </div>

@@ -85,7 +85,7 @@ def upload_file():
         return jsonify({"message": "File processed", "index_name": index_name}), 200
 
 
-@app.route("/api/query", methods=["GET"])
+@app.route("/api/query", methods=["POST"])
 def query():
     index_name = "langchain-retrieval-augmentation-fast"
     data = request.get_json()
@@ -148,7 +148,6 @@ def query():
 
     res = rag_chain.invoke({"input": query, "chat_history": parsed_history})
 
-   
     return jsonify({"ai_response": res['answer']})
 
 
