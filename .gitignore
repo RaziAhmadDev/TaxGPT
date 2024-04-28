@@ -1,0 +1,3 @@
+backendvenv/
+.env
+/backend/deploy.sh
