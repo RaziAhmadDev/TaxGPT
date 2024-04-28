@@ -16,7 +16,6 @@ const FileUpload = () => {
     if (uploadedFile) {
       setLoading(true);
       setError("");
-      // Create a FormData object to hold the file
       const formData = new FormData();
       formData.append("file", uploadedFile);
 
@@ -32,19 +31,14 @@ const FileUpload = () => {
         );
 
         setFile(URL.createObjectURL(uploadedFile));
-        console.log(response.data); // Do something with the response data if needed
       } catch (err: any) {
-        // Handle errors
         if (err.response) {
-          // The server responded with a status code that falls out of the range of 2xx
           setError(
             err.response.data.error || "An error occurred during upload.",
           );
         } else if (err.request) {
-          // The request was made but no response was received
           setError("No response was received.");
         } else {
-          // Something happened in setting up the request that triggered an Error
           setError("Error: " + err.message);
         }
       } finally {
