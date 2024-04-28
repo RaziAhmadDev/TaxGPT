@@ -18,7 +18,7 @@ Follow these steps to set up the project locally:
    - Create a file named `.env.local`.
    - Add the following content to the `.env.local` file:
      ```
-     NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+     NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
      ```
    This will set the base URL for your API when the frontend makes requests to the backend.
 
