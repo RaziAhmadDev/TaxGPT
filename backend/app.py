@@ -12,14 +12,24 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from flask_cors import CORS
+from flask_bcrypt import Bcrypt
 
 from dotenv import load_dotenv
 import os
+
+from pymongo import MongoClient
+
+client = MongoClient("mongodb+srv://razi6037:FNjDoir5c0Vc0jW8@cluster0.d6e8obf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+db = client.Database
+users = db.users
+
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+bcrypt = Bcrypt(app)
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -30,6 +40,45 @@ model_name = "text-embedding-3-small"
 embeddings = OpenAIEmbeddings(
     api_key=os.environ["OPENAI_API_KEY"], model=model_name
 )
+
+@app.route('/api/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    name = data.get('name')
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    if users.find_one({"email": email}):
+        return jsonify({"error": "User already exists"}), 409
+
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    users.insert_one({
+        "name": name,
+        "email": email,
+        "password": hashed_password
+    })
+
+    return jsonify({"message": "User created successfully"}), 201
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    user = users.find_one({"email": email})
+
+    if user and bcrypt.check_password_hash(user['password'], password):
+        return jsonify({"message": "Login successful"}), 200
+    else:
+        return jsonify({"error": "Invalid credentials"}), 401
 
 
 @app.route("/", methods=["GET"])
