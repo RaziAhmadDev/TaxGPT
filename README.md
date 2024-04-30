@@ -3,6 +3,11 @@
 ## Description
 This project is a full-stack application utilizing React/Next, Python Flask, Pinecone, and Open AI. This application allows you to upload your W-2 Forms in PDF Format and ask questions about it from an AI in your browser. You can access this application at this url https://taxgpt-service-qonbqlfqya-el.a.run.app
 
+## Note on System Design
+This project focusses more on building the Core Chat application, user authentication has only been done at a basic level.
+Used Open AI GPT-3.5 as LLM and Pinecone as a vector database to implement Retrievel Augmented Generation. Since pinecone only allows having 5 vectors in free-tier, we had to work around it by replacing the least recently used file's vectors with the currently uploaded file's vectors. Moreover, it uses pytesserect as an OCR for parsing W-2 forms uploaded in PDF Format. Backend is built on Flask and Frontend is a Next App.
+
+
 ## Local Development Setup
 
 Follow these steps to set up the project locally:
