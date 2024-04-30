@@ -47,5 +47,5 @@ Follow these steps to set up the project locally:
   ```
   chmod +x start_script.sh && ./start_script.sh
   ```
-  It will create with email `test@example.com` and password `testpassword`
+  It will create with email `test@example.com` and password `testpassword`, however, you don't really need to sign up to use the chat application, just navigate to `/chat`
   
