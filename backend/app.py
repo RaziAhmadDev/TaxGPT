@@ -20,27 +20,31 @@ import os
 
 from pymongo import MongoClient
 
-client = MongoClient("mongodb+srv://razi6037:FNjDoir5c0Vc0jW8@cluster0.d6e8obf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+load_dotenv()
+
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+MONGO_URI = os.getenv("MONGO_URI")
+
+
+client = MongoClient(MONGO_URI)
 db = client.Database
 users = db.users
 indexes = db.vector_indexes
 
-
-load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 bcrypt = Bcrypt(app)
 
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 pc = Pinecone(api_key=PINECONE_API_KEY)
 spec = ServerlessSpec(cloud="aws", region="us-east-1")
 
 model_name = "text-embedding-3-small"
 embeddings = OpenAIEmbeddings(
-    api_key=os.environ["OPENAI_API_KEY"], model=model_name
+    api_key=OPENAI_API_KEY, model=model_name
 )
 
 def get_available_index():
@@ -55,6 +59,18 @@ def get_available_index():
 
     index_ts = sorted(index_ts, key=lambda x: x[1])
     return index_ts[0][0]
+
+@app.route('/api/delete_all_users', methods=['DELETE'])
+def delete_all_users():
+    try:
+        result = users.delete_many({})  # This deletes all documents in the users collection
+        if result.deleted_count > 0:
+            return jsonify({"message": f"Successfully deleted {result.deleted_count} users."}), 200
+        else:
+            return jsonify({"message": "No users found to delete."}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/signup', methods=['POST'])
 def signup():
