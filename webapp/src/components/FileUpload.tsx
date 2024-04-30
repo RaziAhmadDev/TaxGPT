@@ -11,10 +11,10 @@ type DocumentLoadSuccess = {
 };
 
 interface FileUploadProps {
-  setEnableChat: React.Dispatch<React.SetStateAction<boolean>>;
+  setIndex: React.Dispatch<React.SetStateAction<string>>;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ setEnableChat }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ setIndex }) => {
   const [file, setFile] = useState<Blob | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -29,7 +29,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ setEnableChat }) => {
       formData.append("file", uploadedFile);
 
       try {
-        await axios.post(
+        const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/api/upload`,
           formData,
           {
@@ -39,7 +39,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ setEnableChat }) => {
           },
         );
         setFile(new Blob([uploadedFile], { type: uploadedFile.type }));
-        setEnableChat(true);
+        setIndex(response.data.index_name);
       } catch (err: any) {
         const axiosError = err;
         if (axiosError.response) {

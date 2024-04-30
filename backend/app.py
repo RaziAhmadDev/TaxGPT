@@ -1,3 +1,4 @@
+import datetime
 import uuid
 from flask import Flask, jsonify, request
 from werkzeug.utils import secure_filename
@@ -12,24 +13,103 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from flask_cors import CORS
+from flask_bcrypt import Bcrypt
 
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+from pymongo import MongoClient
 
-app = Flask(__name__)
-CORS(app)
+load_dotenv()
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+MONGO_URI = os.getenv("MONGO_URI")
+
+
+client = MongoClient(MONGO_URI)
+db = client.Database
+users = db.users
+indexes = db.vector_indexes
+
+
+app = Flask(__name__)
+CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+bcrypt = Bcrypt(app)
+
+
 pc = Pinecone(api_key=PINECONE_API_KEY)
 spec = ServerlessSpec(cloud="aws", region="us-east-1")
 
 model_name = "text-embedding-3-small"
 embeddings = OpenAIEmbeddings(
-    api_key=os.environ["OPENAI_API_KEY"], model=model_name
+    api_key=OPENAI_API_KEY, model=model_name
 )
+
+def get_available_index():
+    index_names = [f'vector-index{i}' for i in range(5)]
+    index_ts = []
+    for index_name in index_names:
+        index = indexes.find_one({index_name: index_name})
+        if not (index and index.get("last_updated_ts")):
+            return index_name
+        else:
+            index_ts.append((index_name, index.get("last_updated_ts")))
+
+    index_ts = sorted(index_ts, key=lambda x: x[1])
+    return index_ts[0][0]
+
+@app.route('/api/delete_all_users', methods=['DELETE'])
+def delete_all_users():
+    try:
+        result = users.delete_many({})  # This deletes all documents in the users collection
+        if result.deleted_count > 0:
+            return jsonify({"message": f"Successfully deleted {result.deleted_count} users."}), 200
+        else:
+            return jsonify({"message": "No users found to delete."}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    name = data.get('name')
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    if users.find_one({"email": email}):
+        return jsonify({"error": "User already exists"}), 409
+
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    users.insert_one({
+        "name": name,
+        "email": email,
+        "password": hashed_password
+    })
+
+    return jsonify({"message": "User created successfully"}), 201
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    user = users.find_one({"email": email})
+
+    if user and bcrypt.check_password_hash(user['password'], password):
+        return jsonify({"message": "Login successful"}), 200
+    else:
+        return jsonify({"error": "Invalid credentials"}), 401
 
 
 @app.route("/", methods=["GET"])
@@ -70,11 +150,12 @@ def upload_file():
             api_key=os.environ["OPENAI_API_KEY"], model=model_name
         )
 
-        index_name = "langchain-retrieval-augmentation-fast"
+        index_name = get_available_index()
         if index_name in pc.list_indexes().names():
             pc.delete_index(index_name)
 
         pc.create_index(index_name, dimension=1536, metric="cosine", spec=spec)
+        indexes.update_one({index_name: index_name}, {"$set": {"last_updated_ts": datetime.datetime.now()}}, upsert=True)
 
         vectorstore_from_docs = PineconeVectorStore.from_documents(
             splits, index_name=index_name, embedding=embeddings, namespace="ns-1"
@@ -87,11 +168,11 @@ def upload_file():
 
 @app.route("/api/query", methods=["POST"])
 def query():
-    index_name = "langchain-retrieval-augmentation-fast"
     data = request.get_json()
 
     query = data.get("query")
     chat_history = data.get("chat_history")
+    index_name = data.get("index_name")
 
     parsed_history = []
 
@@ -129,7 +210,7 @@ def query():
     )
 
     qa_system_prompt = """You are an expert and professional tax officer here to assist someone with their questions on their W-2 Form. The person asking the questions is the one whom the W-2 Form belongs. \
-    Under No circumstances will you reveal anyone's social security number. \
+    Under No circumstances will you reveal anyone's social security number, in any form at all, when directly asked, or mentioned as part of any summary. If you must mention it, mention it as XXX-XX-XXXX  \
     Under No circumstances will you tell the person that they should consult a tax professional since you are that tax professional. \
     Use the following pieces of retrieved context to answer the question. \
     If you don't know the answer, just say that you don't know. \

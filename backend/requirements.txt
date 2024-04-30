@@ -3,7 +3,10 @@ flask_cors
 pinecone-client==3.1.0
 python-dotenv
 gunicorn
+pymongo[srv]==3.12.0
+flask-bcrypt
 pypdf
+Pillow
 pdf2image
 pytesseract
 langchain
