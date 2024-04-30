@@ -23,13 +23,14 @@ Follow these steps to set up the project locally:
    This will set the base URL for your API when the frontend makes requests to the backend.
 
 2. **Environment Variables for the Backend:**
-   - In the root directory, create a file named `.env`.
+   - Navigate to 'backend' directory, create a file named `.env`.
    - Add the following content to the `.env` file:
      ```
      PINECONE_API_KEY=<Your SK>
      OPENAI_API_KEY=<Your SK>
+     MONGO_URI=<Your Mongo Connection String>
      ```
-   Replace `<Your SK>` with your actual API keys from Pinecone and OpenAI.
+   Replace `<Your SK>` with your actual API keys from Pinecone and OpenAI. If you don't have those, you can request the owner of this repo to provide the keys.
 
 ### Running the Application
 
@@ -37,3 +38,9 @@ Follow these steps to set up the project locally:
 - Run the following command to start all services:
   ```bash
   docker-compose up
+- You can go to signup and sign up a new user which will automatically redirect inside the application, or you can navigate to backend and do
+  ```
+  chmod +x start_script.sh && ./start_script.sh
+  ```
+  It will create with email `test@example.com` and password `testpassword`
+  
