@@ -3,11 +3,11 @@ import FileUpload from "@/components/FileUpload";
 import { useState } from "react";
 
 export default function Page() {
-  const [enableChat, setEnableChat] = useState(false);
+  const [index, setIndex] = useState("")
   return (
     <div className="flex h-screen">
-      <FileUpload setEnableChat={setEnableChat} />
-      <ChatComponent disabled={!enableChat} />
+      <FileUpload  setIndex={setIndex} />
+      <ChatComponent index = {index}  />
     </div>
   );
 }

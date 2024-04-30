@@ -1,3 +1,4 @@
+import datetime
 import uuid
 from flask import Flask, jsonify, request
 from werkzeug.utils import secure_filename
@@ -22,6 +23,7 @@ from pymongo import MongoClient
 client = MongoClient("mongodb+srv://razi6037:FNjDoir5c0Vc0jW8@cluster0.d6e8obf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client.Database
 users = db.users
+indexes = db.vector_indexes
 
 
 load_dotenv()
@@ -40,6 +42,19 @@ model_name = "text-embedding-3-small"
 embeddings = OpenAIEmbeddings(
     api_key=os.environ["OPENAI_API_KEY"], model=model_name
 )
+
+def get_available_index():
+    index_names = [f'vector-index{i}' for i in range(5)]
+    index_ts = []
+    for index_name in index_names:
+        index = indexes.find_one({index_name: index_name})
+        if not (index and index.get("last_updated_ts")):
+            return index_name
+        else:
+            index_ts.append((index_name, index.get("last_updated_ts")))
+
+    index_ts = sorted(index_ts, key=lambda x: x[1])
+    return index_ts[0][0]
 
 @app.route('/api/signup', methods=['POST'])
 def signup():
@@ -119,11 +134,12 @@ def upload_file():
             api_key=os.environ["OPENAI_API_KEY"], model=model_name
         )
 
-        index_name = "langchain-retrieval-augmentation-fast"
+        index_name = get_available_index()
         if index_name in pc.list_indexes().names():
             pc.delete_index(index_name)
 
         pc.create_index(index_name, dimension=1536, metric="cosine", spec=spec)
+        indexes.update_one({index_name: index_name}, {"$set": {"last_updated_ts": datetime.datetime.now()}}, upsert=True)
 
         vectorstore_from_docs = PineconeVectorStore.from_documents(
             splits, index_name=index_name, embedding=embeddings, namespace="ns-1"
@@ -136,11 +152,11 @@ def upload_file():
 
 @app.route("/api/query", methods=["POST"])
 def query():
-    index_name = "langchain-retrieval-augmentation-fast"
     data = request.get_json()
 
     query = data.get("query")
     chat_history = data.get("chat_history")
+    index_name = data.get("index_name")
 
     parsed_history = []
 
@@ -178,7 +194,7 @@ def query():
     )
 
     qa_system_prompt = """You are an expert and professional tax officer here to assist someone with their questions on their W-2 Form. The person asking the questions is the one whom the W-2 Form belongs. \
-    Under No circumstances will you reveal anyone's social security number. \
+    Under No circumstances will you reveal anyone's social security number, in any form at all, when directly asked, or mentioned as part of any summary. If you must mention it, mention it as XXX-XX-XXXX  \
     Under No circumstances will you tell the person that they should consult a tax professional since you are that tax professional. \
     Use the following pieces of retrieved context to answer the question. \
     If you don't know the answer, just say that you don't know. \

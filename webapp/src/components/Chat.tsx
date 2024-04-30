@@ -9,14 +9,16 @@ type Message = {
 };
 
 interface ChatComponentProps {
-  disabled?: boolean;
+  index?: string;
 }
 
-const ChatComponent: React.FC<ChatComponentProps> = ({ disabled = false }) => {
+const ChatComponent: React.FC<ChatComponentProps> = ({  index = null }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+
+  const disabled = !index
 
   const constructChatHistory = (): string[] => {
     return messages.map((message) => message.text);
@@ -34,6 +36,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ disabled = false }) => {
     const payload = {
       query: newMessage,
       chat_history: constructChatHistory(),
+      index_name: index
     };
 
     setLoading(true);
