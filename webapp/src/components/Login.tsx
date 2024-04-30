@@ -40,7 +40,6 @@ const Login: FC = () => {
   return (
     <div className="flex flex-col items-center w-96">
       <h2 className="text-xl font-bold mb-16">Log In</h2>
-      {isLoading && <div className='mb-2'><Spinner /></div>}
       {error && <div className="text-red-500">{error}</div>}
       <form onSubmit={handleSignup}>
         <input
@@ -64,7 +63,7 @@ const Login: FC = () => {
           className="bg-black text-white p-2 rounded w-full"
           disabled={isLoading}
         >
-          Log In
+          {isLoading? <Spinner /> : 'Log In'}
         </button>
       </form>
       <button

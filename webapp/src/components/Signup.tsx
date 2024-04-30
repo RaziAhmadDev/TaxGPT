@@ -43,7 +43,6 @@ const Signup: FC = () => {
     <div className="flex flex-col items-center w-96">
       <h2 className="text-xl font-bold mb-4">Welcome to TaxGPT</h2>
       <h2 className="text-lg font-semibold mb-16">Sign up to create an account</h2>
-      {isLoading && <div className='mb-2'><Spinner /></div>}
       {error && <div className="text-red-500">{error}</div>}
       <form onSubmit={handleSignup}>
         <input
@@ -75,7 +74,7 @@ const Signup: FC = () => {
           className="bg-black text-white p-2 rounded w-full"
           disabled={isLoading}
         >
-          Sign Up
+          {isLoading? <Spinner /> : 'Sign Up'}
         </button>
       </form>
       <button
