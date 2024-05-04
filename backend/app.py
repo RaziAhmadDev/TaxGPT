@@ -63,7 +63,7 @@ def get_available_index():
 @app.route('/api/delete_all_users', methods=['DELETE'])
 def delete_all_users():
     try:
-        result = users.delete_many({})  # This deletes all documents in the users collection
+        result = users.delete_many({}) 
         if result.deleted_count > 0:
             return jsonify({"message": f"Successfully deleted {result.deleted_count} users."}), 200
         else:
@@ -115,10 +115,6 @@ def login():
 @app.route("/", methods=["GET"])
 def index():
     return jsonify(message="Hello World!")
-
-
-def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
 
 
 @app.route("/api/upload", methods=["POST"])
